@@ -1,0 +1,83 @@
+#User models
+
+
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class User(AbstractUser):
+    ROLE_CHOICES = (
+        ('landlord', 'Landlord'),
+        ('tenant', 'Tenant'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='tenant')
+
+    def __str__(self):
+        return self.username
+
+
+# BOOKING
+from django.db import models
+from django.conf import settings
+from .apartments import Apartment
+
+
+class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='bookings',
+        verbose_name="Арендатор"
+    )
+    apartment = models.ForeignKey(
+        Apartment,
+        on_delete=models.CASCADE,
+        related_name='bookings',
+        verbose_name="Жилье"
+    )
+    start_date = models.DateField(verbose_name="Дата начала")
+    end_date = models.DateField(verbose_name="Дата окончания")
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Статус"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+
+    def __str__(self):
+        return f"{self.user} -> {self.apartment} ({self.start_date} - {self.end_date})"
+
+
+
+#apartments
+
+
+
+from django.db import models
+
+class Apartment(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Заголовок", default="Default Title")  # Заголовок объявления
+    description = models.TextField(verbose_name="Описание", default="Описание отсутствует")  # Описание
+    city = models.CharField(max_length=100, verbose_name="Город", default="Unknown City")  # Город
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена", default=0.00)  # Цена
+    amount_of_rooms = models.IntegerField(verbose_name="Количество комнат", default=1)  # Количество комнат
+    type_of_housing = models.CharField(
+        max_length=50,
+        choices=[('apartment', 'Квартира'), ('studio', 'Студия')],
+        verbose_name="Тип жилья",
+        default='apartment'
+    )  # Тип жилья
+    is_active = models.BooleanField(default=False, verbose_name="Активное объявление")  # Статус активности
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")  # Дата создания
+
+    def __str__(self):
+        return self.title
+
+
